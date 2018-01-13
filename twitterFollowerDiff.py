@@ -11,9 +11,10 @@ def getFollowerDiff():
 	currentFollowers = getAllFollowersUnordered(api)
 	oldFollowers = getOldFollowers()
 	diff = calcFollowerDiff(oldFollowers,currentFollowers,api)
-	storeFollowers(currentFollowers)
 
 	writeDataToMQTT(currentFollowers,diff)
+	writeTweet(diff,api)
+	storeFollowers(currentFollowers)
 
 def storeFollowers(currentFollowers):
 	pickle.dump(currentFollowers, open( "followers.p", "wb" ))
@@ -39,6 +40,35 @@ def calcFollowerDiff(oldFollowers, currentFollowers,api):
 	print("{} unfollowers.".format(len(unfollowers)))
 	unfollowersNames = getNamesOf(unfollowers,api)
 	return [newFollowersNames,unfollowersNames]
+
+def writeTweet(diff,api):
+	newFollowers = list(diff[0])
+	unfollowers = list(diff[1])
+	newFollowerText = formatFollowerList(newFollowers,"New follower")
+	unfollowerText = formatFollowerList(unfollowers,"New unfollower")
+	statusText = None
+	if newFollowerText != "":
+		if unfollowerText != "":
+			statusText = "{}\n{}".format(newFollowerText,unfollowerText)
+		else:
+			statusText = newFollowerText
+	else:
+		if unfollowerText != "":
+			statusText = unfollowerText
+	if statusText is not None:
+		api.update_status(statusText)
+		print(statusText)
+
+def formatFollowerList(nameList,basestring):
+	statusText = ""
+	if len(nameList) != 0:
+		if len(nameList) == 1:
+			statusText += "{}: @{}".format(basestring,nameList[0])
+		else:
+			statusText += "{}s:\n".format(basestring)
+			for name in nameList:
+				statusText += "- @{}\n".format(name)
+	return statusText
 
 def writeDataToMQTT(currentFollowers,diff):
 	newFollowers = list(diff[0])

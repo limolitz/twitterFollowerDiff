@@ -3,15 +3,24 @@
 
 import configparser
 import tweepy
+import pickle
+import os.path
 
 def getFollowerDiff():
 	api = auth()
 	currentFollowers = getAllFollowersUnordered(api)
 	oldFollowers = getOldFollowers()
 	diff = calcFollowerDiff(oldFollowers,currentFollowers)
+	storeFollowers(currentFollowers)
+
+def storeFollowers(currentFollowers):
+	pickle.dump(currentFollowers, open( "followers.p", "wb" ))
 
 def getOldFollowers():
-	return set()
+	if os.path.isfile("followers.p"):
+		return pickle.load(open("followers.p", "rb" ))
+	else:
+		return set()
 
 def calcFollowerDiff(oldFollowers, currentFollowers):
 	newFollowers = currentFollowers.difference(oldFollowers)

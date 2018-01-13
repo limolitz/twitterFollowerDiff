@@ -3,3 +3,5 @@ pyvenv.cfg
 config.ini
 bin
 lib
+cron.log
+followers.p

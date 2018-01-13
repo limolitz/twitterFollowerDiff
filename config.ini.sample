@@ -1,0 +1,8 @@
+[secrets]
+consumer_key:asdasdasdasd
+consumer_secret:adasdasdasdasd
+access_token:adasdasd
+access_token_secret:asdasd
+
+[user]
+username:jack

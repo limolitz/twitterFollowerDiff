@@ -4,13 +4,24 @@
 import configparser
 import tweepy
 
-def followerDiff():
+def getFollowerDiff():
 	api = auth()
 	currentFollowers = getAllFollowersUnordered(api)
+	oldFollowers = getOldFollowers()
+	diff = calcFollowerDiff(oldFollowers,currentFollowers)
+
+def getOldFollowers():
+	return set()
+
+def calcFollowerDiff(oldFollowers, currentFollowers):
+	newFollowers = currentFollowers.difference(oldFollowers)
+	print("{} new followers.".format(len(newFollowers)))
+	unfollowers = oldFollowers.difference(currentFollowers)
+	print("{} unfollowers.".format(len(unfollowers)))
 
 def getAllFollowersUnordered(api):
 	config = getConfig()
-	followers = api.followers_ids(screen_name=config.get("user", "username"))
+	followers = set(api.followers_ids(screen_name=config.get("user", "username")))
 	print("You have {} followers.".format(len(followers)))
 	return followers
 
@@ -29,4 +40,4 @@ def auth():
 	return api
 
 if __name__ == '__main__':
-	followerDiff()
+	getFollowerDiff()

@@ -28,8 +28,17 @@ def getOldFollowers():
 def getNamesOf(userList,api):
 	names = []
 	for userId in userList:
-		name = api.get_user(userId).screen_name
-		names.append(name)
+		try:
+			name = api.get_user(userId).screen_name
+			names.append("@{}".format(name))
+		except tweepy.TweepError as e:
+			if e.api_code == 50:
+				names.append("Deleted user, id {}.".format(userId))
+				continue
+			if e.api_code == 63:
+				names.append("Suspended user, id {}.".format(userId))
+				continue
+			raise e
 	return names
 
 def calcFollowerDiff(oldFollowers, currentFollowers,api):
@@ -56,18 +65,26 @@ def writeTweet(diff,api):
 		if unfollowerText != "":
 			statusText = unfollowerText
 	if statusText is not None:
-		api.update_status(statusText)
+		try:
+			api.update_status(statusText)
+		except tweepy.TweepError as e:
+			# duplicates can be ignored
+			if e.api_code == 187:
+				print("Ignoring duplicate tweet'{}'.".format(statusText))
+				return
+			raise e
 		print(statusText)
 
 def formatFollowerList(nameList,basestring):
 	statusText = ""
 	if len(nameList) != 0:
+		# only one account, write directly
 		if len(nameList) == 1:
-			statusText += "{}: @{}".format(basestring,nameList[0])
+			statusText += "{}: {}".format(basestring,nameList[0])
 		else:
 			statusText += "{}s:\n".format(basestring)
 			for name in nameList:
-				statusText += "- @{}\n".format(name)
+				statusText += "- {}\n".format(name)
 	return statusText
 
 def writeDataToMQTT(currentFollowers,diff):

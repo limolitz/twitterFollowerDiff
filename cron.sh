@@ -10,5 +10,5 @@ if [ "$(uname -s)" = "Darwin" ]; then
 	export PATH=/usr/local/opt/python3/bin/:$PATH
 fi
 
-source bin/activate
+source venv/bin/activate
 TZ=UTC python3 twitterFollowerDiff.py >> cron.log

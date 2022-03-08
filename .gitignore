@@ -5,3 +5,4 @@ bin
 lib
 cron.log
 followers.p
+venv

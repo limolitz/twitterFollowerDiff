@@ -55,8 +55,8 @@ def calcFollowerDiff(oldFollowers, currentFollowers, api):
 def writeTweet(diff, api):
     newFollowers = list(diff[0])
     unfollowers = list(diff[1])
-    newFollowerText = formatFollowerList(newFollowers, "New follower")
-    unfollowerText = formatFollowerList(unfollowers, "New unfollower")
+    newFollowerText = formatFollowerList(newFollowers, f"{len(newFollowers)} new follower")
+    unfollowerText = formatFollowerList(unfollowers, f"{len(unfollowers)} new unfollower")
     statusText = None
     if newFollowerText != "":
         if unfollowerText != "":

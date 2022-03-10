@@ -14,4 +14,7 @@ Make a virtualenv `python3 -m venv .`, activate with `source bin/activate` and i
 Copy the file `config.ini.sample` to `config.ini` and adjust the contents. Set the username as the account you want to watch.
 
 ## Usage
-Run `twitterFollowerDiff.py`.
+Run `twitterFollowerDiff.py` periodically.
+
+### Docker
+Mount the `config.ini` and the `followers.p`, owned by the UID `1241`, into the container and run it periodically.

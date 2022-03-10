@@ -6,6 +6,3 @@ access_token_secret:asdasd
 
 [user]
 username:jack
-
-[paths]
-mqttPath:/home/USER/bin/mqttsend/mqttsend.sh

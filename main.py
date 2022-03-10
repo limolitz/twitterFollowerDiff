@@ -3,8 +3,6 @@ import configparser
 import tweepy
 import pickle
 import os.path
-import json
-import subprocess
 
 
 def getFollowerDiff():
@@ -13,7 +11,6 @@ def getFollowerDiff():
     oldFollowers = getOldFollowers()
     diff = calcFollowerDiff(oldFollowers, currentFollowers, api)
 
-    writeDataToMQTT(currentFollowers, diff)
     writeTweet(diff, api)
     storeFollowers(currentFollowers)
 
@@ -33,26 +30,25 @@ def getNamesOf(userList, api):
     names = []
     for userId in userList:
         try:
-            name = api.get_user(userId).screen_name
+            name = api.get_user(user_id=userId).screen_name
             names.append(f"@{name}")
-        except tweepy.TweepError as e:
-            if e.api_code == 50:
-                names.append(f"Deleted user, id {userId}.")
-                continue
-            if e.api_code == 63:
-                names.append(f"Suspended user, id {userId}.")
-                continue
-            raise e
+        except tweepy.errors.NotFound:
+            names.append(f"Deleted user, id {userId}.")
+        except tweepy.errors.Forbidden:
+            names.append(f"Suspended user, id {userId}.")
+            continue
     return names
 
 
 def calcFollowerDiff(oldFollowers, currentFollowers, api):
     newFollowers = currentFollowers.difference(oldFollowers)
-    newFollowersNames = getNamesOf(newFollowers, api)
     print(f"{len(newFollowers)} new followers.")
+    newFollowersNames = getNamesOf(newFollowers, api)
+
     unfollowers = oldFollowers.difference(currentFollowers)
-    print("{len(unfollowers)} unfollowers.")
+    print(f"{len(unfollowers)} unfollowers.")
     unfollowersNames = getNamesOf(unfollowers, api)
+
     return [newFollowersNames, unfollowersNames]
 
 
@@ -71,15 +67,14 @@ def writeTweet(diff, api):
         if unfollowerText != "":
             statusText = unfollowerText
     if statusText is not None:
+        print(f"Posting to {api.get_settings()['screen_name']}: {statusText}")
         try:
             api.update_status(statusText)
-        except tweepy.TweepError as e:
-            # duplicates can be ignored
-            if e.api_code == 187:
-                print(f"Ignoring duplicate tweet'{statusText}'.")
-                return
-            raise e
-        print(statusText)
+        except tweepy.errors.Forbidden as e:
+            print(f"Error {e}")
+            if 186 in e.api_codes:
+                # TODO: split up into max tweet length
+                pass
 
 
 def formatFollowerList(nameList, basestring):
@@ -95,36 +90,11 @@ def formatFollowerList(nameList, basestring):
     return statusText
 
 
-def writeDataToMQTT(currentFollowers, diff):
-    newFollowers = list(diff[0])
-    unfollowers = list(diff[1])
-
-    config = getConfig()
-
-    mqttObject = {
-        "topic": "twitterFollower",
-        "name": config.get("user", "username"),
-        "measurements": {
-            "newFollowers": newFollowers,
-            "unfollowers": unfollowers,
-            "totalFollowers": len(currentFollowers)
-        }
-    }
-
-    mqttString = json.dumps(mqttObject)
-    print(f"Writing JSON: {mqttString}")
-    sender = subprocess.Popen(
-        [config.get("paths", "mqttPath")],
-        stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE
-    )
-    output, errors = sender.communicate(mqttString.encode("utf-8"))
-    print(output, errors)
-
-
 def getAllFollowersUnordered(api):
     config = getConfig()
-    followers = set(api.get_follower_ids(screen_name=config.get("user", "username")))
-    print(f"You have {len(followers)} followers.")
+    username = config.get("user", "username")
+    followers = set(api.get_follower_ids(screen_name=username))
+    print(f"{username} has {len(followers)} followers.")
     return followers
 
 
@@ -136,8 +106,12 @@ def getConfig():
 
 def auth():
     config = getConfig()
-    auth = tweepy.OAuthHandler(config.get("secrets", "consumer_key"), config.get("secrets", "consumer_secret"))
-    auth.set_access_token(config.get("secrets", "access_token"), config.get("secrets", "access_token_secret"))
+    auth = tweepy.OAuth1UserHandler(
+        config.get("secrets", "consumer_key"),
+        config.get("secrets", "consumer_secret"),
+        config.get("secrets", "access_token"),
+        config.get("secrets", "access_token_secret")
+    )
 
     api = tweepy.API(auth)
 

@@ -1,7 +1,6 @@
 # Twitter Follower Diff
 
-This script watches you followers on Twitter and tweets and posts to an MQTT broker when it detects some differences. For the MQTT script see
- [here](https://github.com/wasmitnetzen/mqttsend).
+This script watches somebody's followers on Twitter and tweets when it detects some differences.
 
  ## Dependencies
 
@@ -12,7 +11,7 @@ Make a virtualenv `python3 -m venv .`, activate with `source bin/activate` and i
 
 ## Configuration
 
-Copy the file `config.ini.sample` to `config.ini` and adjust the contents.
+Copy the file `config.ini.sample` to `config.ini` and adjust the contents. Set the username as the account you want to watch.
 
 ## Usage
-Either run `twitterFollowerDiff.py` or `cron.sh`.
+Run `twitterFollowerDiff.py`.
